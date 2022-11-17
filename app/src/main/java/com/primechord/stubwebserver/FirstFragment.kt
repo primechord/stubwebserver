@@ -1,11 +1,14 @@
 package com.primechord.stubwebserver
 
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.navigation.fragment.findNavController
+import android.widget.TextView
+import com.primechord.stubwebserver.application.MyApplication
 import com.primechord.stubwebserver.databinding.FragmentFirstBinding
 
 /**
@@ -33,7 +36,21 @@ class FirstFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         binding.buttonFirst.setOnClickListener {
-            findNavController().navigate(R.id.action_FirstFragment_to_SecondFragment)
+            val thread = Thread {
+                try {
+                    val service = (requireActivity().application as MyApplication)
+                        .appCompositionRoot.gitHubService
+                    val repos = service.listRepos(user = "primechord")
+                    val owner = repos.execute().body()?.first()?.owner.toString()
+                    Handler(Looper.getMainLooper()).post {
+                        val textOnScreen = view.rootView.findViewById<TextView>(R.id.textview_first)
+                        textOnScreen.text = owner
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+            thread.start()
         }
     }
 
